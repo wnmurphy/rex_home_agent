@@ -1,6 +1,9 @@
 import pvcheetah
 import pvcobra, pvporcupine, ollama
+import pvorca
 from pvrecorder import PvRecorder
+from pvspeaker import PvSpeaker
+
 from config import Config
 
 
@@ -30,16 +33,25 @@ def run_assistant():
     4. Sends transcription to Ollama for response generation.
     5. Play back the generated response.
     """
-    porcupine = pvporcupine.create(access_key=Config.PICOVOICE_LICENSE_KEY, keywords=['picovoice'])
+    recorder = PvRecorder(frame_length=Config.AUDIO_FRAME_LENGTH_IN_SAMPLES)
+    porcupine = pvporcupine.create(
+        access_key=Config.PICOVOICE_LICENSE_KEY,
+        keyword_paths=[Config.PORCUPINE_WAKE_WORD_PATH]
+    )
     cobra = pvcobra.create(access_key=Config.PICOVOICE_LICENSE_KEY)
     cheetah = pvcheetah.create(
         access_key=Config.PICOVOICE_LICENSE_KEY,
         enable_automatic_punctuation=True,
         endpoint_duration_sec=Config.SECONDS_OF_SILENCE_THAT_INDICATES_USER_IS_DONE_SPEAKING,
     )
-    recorder = PvRecorder(frame_length=porcupine.frame_length) # Must match the frame_length of the engines.
+    orca = pvorca.create(
+        access_key=Config.PICOVOICE_LICENSE_KEY,
+        # model_path=Config.TTS_MODEL_PATH
+    )
+    speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16)
+    speaker.start()
 
-    print("Assistant Active. Say 'Picovoice' to start...")
+    print("Assistant Active. Say 'Hey Rex' to start...")
 
     try:
         # Listen indefinitely.
@@ -70,11 +82,24 @@ def run_assistant():
                         break
 
                 print(f"User: {current_voice_submission}")
-                response = ollama.chat(
+                response_stream = ollama.chat(
                     model=Config.OLLAMA_MODEL,
                     messages=[{'role': 'user', 'content': current_voice_submission}],
+                    stream=True,
                 )
-                print(f"AI: {response['message']['content']}")
+
+                stream = orca.stream_open()
+
+                for text_chunk in response_stream:
+                    text_segment = text_chunk['message']['content']
+                    if text_segment:
+                        pcm = stream.synthesize(text_segment)
+                        if pcm is not None:
+                            speaker.write(pcm)
+                speaker.flush()
+                stream.close()
+
+                # print(f"AI: {response['message']['content']}")
 
     except KeyboardInterrupt:
         print("\nStopping...")
@@ -84,6 +109,8 @@ def run_assistant():
         cobra.delete()
         recorder.delete()
         cheetah.delete()
+        orca.delete()
+        speaker.stop()
 
 
 if __name__ == "__main__":

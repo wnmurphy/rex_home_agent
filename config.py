@@ -12,6 +12,7 @@ class Config:
     CHUNK_SIZE = 1024
     BUFFER_SIZE = 4096
     BIT_DEPTH = 32768.0
+    AUDIO_FRAME_LENGTH_IN_SAMPLES = 512
 
     # VAD settings
     VOICE_DETECTION_THRESHOLD = 0.2 # probability of voice activity required to trigger assistant.
@@ -19,9 +20,7 @@ class Config:
     SECONDS_OF_SILENCE_THAT_INDICATES_USER_IS_DONE_SPEAKING = 3.0
 
     # Wake word settings
-    WAKE_WORD = "hey rex"
-    PORCUPINE_MODEL_PATH = "models/porcupine_params.ppn"
-    PORCUPINE_WAKE_WORD_PATH = "models/porcupine_wake_word.ppn"
+    PORCUPINE_WAKE_WORD_PATH = "./models/Hey-Rex_en_mac_v4_0_0.ppn"
 
     # STT settings
     WHISPER_MODEL = "base"
@@ -32,5 +31,4 @@ class Config:
     OLLAMA_MODEL = "huihui_ai/mistral-small-abliterated:latest"
 
     # TTS settings
-    TTS_MODEL = "orca"  # or "sherpa-onnx"
-    TTS_SAMPLE_RATE = 22050
+    TTS_MODEL_PATH = "./models/orca_params_en_male.pv"
