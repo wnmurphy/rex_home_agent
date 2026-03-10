@@ -1,7 +1,6 @@
-import numpy as np
+import pvcheetah
 import pvcobra, pvporcupine, ollama
 from pvrecorder import PvRecorder
-from pywhispercpp.model import Model
 from config import Config
 
 
@@ -33,14 +32,17 @@ def run_assistant():
     """
     porcupine = pvporcupine.create(access_key=Config.PICOVOICE_LICENSE_KEY, keywords=['picovoice'])
     cobra = pvcobra.create(access_key=Config.PICOVOICE_LICENSE_KEY)
-    whisper = Model(model=Config.WHISPER_MODEL)
-    # Recorder must match the frame_length of the engines
-    recorder = PvRecorder(frame_length=porcupine.frame_length)
+    cheetah = pvcheetah.create(
+        access_key=Config.PICOVOICE_LICENSE_KEY,
+        enable_automatic_punctuation=True,
+        endpoint_duration_sec=Config.SECONDS_OF_SILENCE_THAT_INDICATES_USER_IS_DONE_SPEAKING,
+    )
+    recorder = PvRecorder(frame_length=porcupine.frame_length) # Must match the frame_length of the engines.
 
     print("Assistant Active. Say 'Picovoice' to start...")
 
     try:
-        # Listen indefinitely for wake word...
+        # Listen indefinitely.
         recorder.start()
         while True:
             pcm = recorder.read()
@@ -49,57 +51,29 @@ def run_assistant():
             if porcupine.process(pcm) >= 0:
                 print("\n[Wake Word Detected] How can I help?")
 
-                # Start capturing the user's voice input until they stop talking...
-                user_audio_buffer = []
+                silent_frames = 0 # Track silence to know when user has finished speaking.
 
-                silent_frames = 0 # Track silence to know when to submit user query
-                total_recorded_frames_for_this_submission = 0 # Track total recorded frames to know when we've met the minimum length for whisper.
+                current_voice_submission = ""
 
-                samples_per_second = Config.SAMPLE_RATE / porcupine.frame_length
-
-                samples_of_silence_required_before_user_done = Config.SECONDS_OF_SILENCE_BEFORE_SUBMITTING_TO_OLLAMA * samples_per_second
-
-                # Continue capturing input until break conditions are met below...
+                # After wake word, capture input until break conditions are met below.
                 while True:
                     pcm = recorder.read()
-                    user_audio_buffer.extend(pcm)
 
-                    is_speech = cobra.process(pcm) >= Config.VOICE_DETECTION_THRESHOLD
-
-                    # Start a counter for consecutive silence.
-                    if not is_speech:
-                        silent_frames += 1
-                        print(f"silent_frames: {silent_frames}")
-                    else:
-                        silent_frames = 0
-                        print(f"silent_frames: {silent_frames}")
-
-                    # Increment recorded frames by number of frames in this chunk.
-                    frames_in_current_chunk = len(pcm) / porcupine.frame_length
-                    total_recorded_frames_for_this_submission += frames_in_current_chunk
-                    print(f"recorded_frames: {total_recorded_frames_for_this_submission}")
-
-                    # Stop collecting audio when...
-                    if (
-                        # The user has stopped speaking for long enough to indicate that they are done speaking, and
-                        silent_frames > samples_of_silence_required_before_user_done and
-                        # We've hit the minimum audio length for Whisper to transcribe.
-                        total_recorded_frames_for_this_submission > Config.MIN_RECORDED_FRAMES_FOR_TRANSCRIPTION
-                    ):
+                    # Transcribe the input as the user is speaking.
+                    partial_transcript, is_endpoint = cheetah.process(pcm)
+                    if partial_transcript:
+                        current_voice_submission += partial_transcript
+                    if is_endpoint:
+                        final_transcript = cheetah.flush()
+                        current_voice_submission += final_transcript
+                        print(f"current_voice_submission: {current_voice_submission}")
                         break
 
-                print("[Processing with Ollama...]")
-
-                # Convert the speech we have as a raw PCM list into a float32 numpy array for Whisper.
-                audio_np = np.array(user_audio_buffer, dtype=np.float32) / Config.BIT_DEPTH
-
-                # Transcribe the voice input...
-                print("[Transcribing...]")
-                segments = whisper.transcribe(audio_np)
-                user_text = " ".join([s.text for s in segments])
-                print(f"User: {user_text}")
-
-                response = ollama.chat(model=Config.OLLAMA_MODEL, messages=[{'role': 'user', 'content': user_text}])
+                print(f"User: {current_voice_submission}")
+                response = ollama.chat(
+                    model=Config.OLLAMA_MODEL,
+                    messages=[{'role': 'user', 'content': current_voice_submission}],
+                )
                 print(f"AI: {response['message']['content']}")
 
     except KeyboardInterrupt:
@@ -109,21 +83,8 @@ def run_assistant():
         porcupine.delete()
         cobra.delete()
         recorder.delete()
+        cheetah.delete()
 
-def audio_player():
-    """
-    Handles TTS audio playback.
-    Checks after every streaming audio chunk if user tried to interrupt.
-    Sets global user_is_speaking flag if so.
-    """
-    pass
-
-def interruption_handler():
-    """
-    Contains a loop which checks for interruptions.
-    If global user_is_speaking boolean is true, terminates the streaming audio response and handles cleanup of current response.
-    """
-    pass
 
 if __name__ == "__main__":
     setup_environment()

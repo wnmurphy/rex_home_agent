@@ -16,7 +16,7 @@ class Config:
     # VAD settings
     VOICE_DETECTION_THRESHOLD = 0.2 # probability of voice activity required to trigger assistant.
 
-    SECONDS_OF_SILENCE_BEFORE_SUBMITTING_TO_OLLAMA = 3.0
+    SECONDS_OF_SILENCE_THAT_INDICATES_USER_IS_DONE_SPEAKING = 3.0
 
     # Wake word settings
     WAKE_WORD = "hey rex"
@@ -24,7 +24,7 @@ class Config:
     PORCUPINE_WAKE_WORD_PATH = "models/porcupine_wake_word.ppn"
 
     # STT settings
-    WHISPER_MODEL = "base.en"
+    WHISPER_MODEL = "base"
     MIN_RECORDED_FRAMES_FOR_TRANSCRIPTION = 100
 
     # Ollama settings

@@ -10,6 +10,7 @@ pvcobra
 # Converting incoming user input from speech-to-text.
 numpy
 pywhispercpp
+pvcheetah
 
 # Sending user input text to a model
 ollama
