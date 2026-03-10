@@ -1,0 +1,19 @@
+# Listening for audio input and speech activity
+pvrecorder
+pvcobra
+
+# Listening for wakeword or user speech input
+pvporcupine
+
+# Speech-to-text
+pywhispercpp
+
+# Text-to-speech
+pvorca
+pvspeaker
+
+# Sending user input to a model
+ollama
+
+# Miscellaneous
+numpy
