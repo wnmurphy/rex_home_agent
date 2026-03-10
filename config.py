@@ -11,11 +11,12 @@ class Config:
     SAMPLE_RATE = 16000
     CHUNK_SIZE = 1024
     BUFFER_SIZE = 4096
+    BIT_DEPTH = 32768.0
 
     # VAD settings
-    VOICE_DETECTION_THRESHOLD = 0.5 # probability of voice activity required to trigger assistant.
+    VOICE_DETECTION_THRESHOLD = 0.2 # probability of voice activity required to trigger assistant.
 
-    SECONDS_OF_SILENCE_BEFORE_SUBMITTING_TO_OLLAMA = 1.0
+    SECONDS_OF_SILENCE_BEFORE_SUBMITTING_TO_OLLAMA = 3.0
 
     # Wake word settings
     WAKE_WORD = "hey rex"
@@ -23,9 +24,8 @@ class Config:
     PORCUPINE_WAKE_WORD_PATH = "models/porcupine_wake_word.ppn"
 
     # STT settings
-    WHISPER_MODEL = "base"
-    MIN_RECORDED_FRAMES = 100
-    SAMPLE_RATE = 16000
+    WHISPER_MODEL = "base.en"
+    MIN_RECORDED_FRAMES_FOR_TRANSCRIPTION = 100
 
     # Ollama settings
     OLLAMA_HOST = "http://localhost:11434"

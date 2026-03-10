@@ -10,10 +10,23 @@ Rex Home Agent is a personal AI assistant.
     (echo; echo 'eval "$(/opt/homebrew/bin/brew shellenv)"') >> ~/.zprofile
     eval "$(/opt/homebrew/bin/brew shellenv)"
     ```
-1. Install Ollama with `brew install ollama`.
-2. Start Ollama with `brew services start ollama`.
-3. Download a model like Mistral Small with `ollama pull huihui_ai/mistral-small-abliterated:latest`.
-4. Set this model name as `OLLAMA_MODEL` in config.py
-5. Activate the virtual environment with `source .venv/bin/activate`.
-6. Install Python dependencies with `pip3 install -r requirements.txt`. 
-7. Get a [Picovoice license key](https://console.picovoice.ai/signup) and set it as `PICOVOICE_LICENSE_KEY` in your environment variables.
+2. Install Ollama with `brew install ollama`.
+3. Start Ollama with `brew services start ollama`.
+4. Download a model like Mistral Small with `ollama pull huihui_ai/mistral-small-abliterated:latest`.
+5. Set this model name as `OLLAMA_MODEL` in config.py
+6. Activate the virtual environment with `source .venv/bin/activate`.
+7. Install Python dependencies with `pip3 install -r requirements.txt`. 
+8. Get a [Picovoice license key](https://console.picovoice.ai/signup) and set it as `PICOVOICE_LICENSE_KEY` in your environment variables.
+
+
+## TODO Items
+
+- [ ] Add STT processor.
+- [ ] Make STT processor check for user interrupts after every chunk.
+- [ ] Add circular buffer for audio recording to prevent memory overflow.
+- [ ] Sustain conversation. Only require wake word after ~5 minutes of no user input or model response.
+- [ ] Add Agent class from LangChain.
+- [ ] Set a system prompt for agent, specific to voice mode (keep responses short, etc.)
+- [ ] Add model memory like MemoryBuffer from LangChain.
+- [ ] Add tool to perform a web search.
+- [ ] Add a thinking sound effect when the agent is processing a response.

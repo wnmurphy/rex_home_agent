@@ -1,19 +1,19 @@
-# Listening for audio input and speech activity
+# Listening for audio input.
 pvrecorder
-pvcobra
 
-# Listening for wakeword or user speech input
+# Listening for wake word in the audio input.
 pvporcupine
 
-# Speech-to-text
+# Listening for speech activity/silence in the audio input.
+pvcobra
+
+# Converting incoming user input from speech-to-text.
+numpy
 pywhispercpp
 
-# Text-to-speech
-pvorca
-pvspeaker
-
-# Sending user input to a model
+# Sending user input text to a model
 ollama
 
-# Miscellaneous
-numpy
+# Converting outgoing model response from text-to-speech.
+pvorca
+pvspeaker
