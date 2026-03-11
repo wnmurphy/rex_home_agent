@@ -21,11 +21,12 @@ Rex Home Agent is a personal AI assistant.
 
 ## TODO Items
 
-- [ ] Modify worker class to accept an instance of library (recorder or speaker) instead of only Queue
-- [ ] Implement individual worker logic.
-- [ ] Sustain conversation. Only require wake word after ~5 minutes of no user input or model response.
+- [ ] Implement barge-in
+- [ ] Sustain conversation. Don't require wake word unless no user voice input for ~5 minutes, etc.
 - [ ] Add Agent class from LangChain.
 - [ ] Set a system prompt for agent, specific to voice mode (keep responses short, etc.)
 - [ ] Add model memory like MemoryBuffer from LangChain.
 - [ ] Add tool to perform a web search.
+- [ ] Add a wake sound effect when the wake word is detected.
 - [ ] Add a thinking sound effect when the agent is processing a response.
+- [ ] Add a sleep sound effect when the agent goes back to sleep.
