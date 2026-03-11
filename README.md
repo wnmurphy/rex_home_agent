@@ -2,6 +2,22 @@
 
 Rex Home Agent is a personal AI assistant.
 
+The goal was to see if I could build a private voice assistant that uses local models and hardware.
+
+Should:
+* work out-of-the-box on any M4 Mac
+* have persistent memory
+* have tool usage (i.e. do a web search for information past the model's cutoff date)
+* support barge-in (user can interrupt voice output)
+
+## Requirements
+
+This should run comfortably on a MacBook Pro, Mac Mini, Mac Studio, etc. with:
+* an M4 chip
+* 48GB RAM
+* 14 CPU cores
+* 20 GPU cores 
+
 ## Setup
 
 1. Install Homebrew if you don't already have it installed:
