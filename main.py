@@ -1,14 +1,21 @@
 import threading
-import queue
 import time
+from queue import Queue
 
 import pvcheetah
-import pvcobra, pvporcupine, ollama
+import pvcobra
 import pvorca
+import pvporcupine
 from pvrecorder import PvRecorder
 from pvspeaker import PvSpeaker
 
 from config import Config
+from workers.audio_capture import AudioCaptureWorker
+from workers.llm import LLMWorker
+from workers.speaker import SpeakerWorker
+from workers.speech_to_text import SpeechToTextWorker
+from workers.text_to_speech import TextToSpeechWorker
+from workers.wake_word_detection import WakeWordDetectionWorker
 
 
 def setup_environment():
@@ -26,17 +33,18 @@ def setup_environment():
         print("Warning: Could not connect to Ollama server")
 
 
-def run_assistant():
-    """
-    Contains the main loop, which handles the following:
-    1. Listens for wake word.
-    2. Collects audio samples until
-        a. we have enough for Whisper to transcribe and
-        b. the user has stopped talking for a certain amount of time.
-    3. Sends audio samples to Whisper for transcription.
-    4. Sends transcription to Ollama for response generation.
-    5. Play back the generated response.
-    """
+def main():
+
+    stop_event = threading.Event()
+
+    # Create queues for communication between threads.
+    audio_capture_queue = Queue(maxsize=32)
+    speech_audio_queue = Queue(maxsize=32)
+    stt_text_queue = Queue(maxsize=8)
+    llm_response_text_queue = Queue(maxsize=32)
+    tts_audio_queue = Queue(maxsize=64)
+
+    # Initialize engines to pass into workers.
     recorder = PvRecorder(frame_length=Config.AUDIO_FRAME_LENGTH_IN_SAMPLES)
     porcupine = pvporcupine.create(
         access_key=Config.PICOVOICE_LICENSE_KEY,
@@ -53,97 +61,84 @@ def run_assistant():
         # model_path=Config.TTS_MODEL_PATH
     )
     speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16)
+
+    # Initialize workers, where each worker has its own engine and thread.
+    workers = [
+
+        # Captures audio input from microphone, and writes it to the audio capture queue.
+        AudioCaptureWorker(
+            in_q=None,
+            out_q=audio_capture_queue,
+            recorder=recorder
+        ),
+
+        # Passes audio from the capture queue to the speech queue, writing wake event if detected.
+        WakeWordDetectionWorker(
+            in_q=audio_capture_queue,
+            out_q=speech_audio_queue,
+            porcupine=porcupine
+        ),
+
+        # Converts speech audio in the speech queue to text, and writes that text to the text queue.
+        SpeechToTextWorker(
+            in_q=speech_audio_queue,
+            out_q=stt_text_queue,
+            cheetah=cheetah
+        ),
+
+        # Sends text to the language model for processing, and writes streaming model output to the LLM response queue.
+        LLMWorker(
+            in_q=stt_text_queue,
+            out_q=llm_response_text_queue
+        ),
+
+        # Converts text from LLM response queue into synthesized speech, and writes speech chunks to the TTS queue.
+        TextToSpeechWorker(
+            in_q=llm_response_text_queue,
+            out_q=tts_audio_queue,
+            orca=orca
+        ),
+
+        # Plays synthesized speech from the TTS queue to the speaker as audio.
+        SpeakerWorker(
+            in_q=tts_audio_queue,
+            out_q=None,
+            speaker=speaker
+        ),
+    ]
+
+    recorder.start()
     speaker.start()
-    audio_queue = queue.Queue()
 
-    def _play_audio_worker():
-        while True:
-            next_pcm = audio_queue.get()
-            if next_pcm is None:
-                break
-            speaker.write(next_pcm)
-            audio_queue.task_done()
-
-    playback_thread = threading.Thread(target=_play_audio_worker, daemon=True)
-    playback_thread.start()
-
-    print("Assistant Active. Say 'Hey Rex' to start...")
+    for w in workers:
+        w.start()
 
     try:
-        # Listen indefinitely.
-        recorder.start()
         while True:
-            pcm = recorder.read()
-
-            # When we detect the wake word...
-            if porcupine.process(pcm) >= 0:
-                print("\n[Wake Word Detected] How can I help?")
-
-                current_voice_submission = ""
-
-                # After wake word, capture input until break conditions are met below.
-                while True:
-                    pcm = recorder.read()
-
-                    # Transcribe the input as the user is speaking.
-                    partial_transcript, is_endpoint = cheetah.process(pcm)
-                    if partial_transcript:
-                        current_voice_submission += partial_transcript
-                    if is_endpoint:
-                        final_transcript = cheetah.flush()
-                        current_voice_submission += final_transcript
-                        print(f"current_voice_submission: {current_voice_submission}")
-                        break
-
-                # Send the user input to Ollama to generate a response.
-                print(f"User: {current_voice_submission}")
-                response_stream = ollama.chat(
-                    model=Config.OLLAMA_MODEL,
-                    messages=[{'role': 'user', 'content': current_voice_submission}],
-                    stream=True,
-                )
-
-                # Open Orca stream
-                stream = orca.stream_open()
-
-                # Take the streaming response from Ollama and play it back.
-                for text_chunk in response_stream:
-                    text_segment = text_chunk['message']['content']
-                    if text_segment:
-                        pcm = stream.synthesize(text_segment)
-                        if pcm is not None:
-                            audio_queue.put(pcm)
-
-                # Get the final tail of the audio from Orca.
-                final_pcm = stream.flush()
-                if final_pcm is not None:
-                    audio_queue.put(final_pcm)
-
-                # Close the Orca stream.
-                stream.close()
-
-                # Wait here for the background worker to finish playing the audio.
-                audio_queue.join()
-
+            time.sleep(1)
 
     except KeyboardInterrupt:
-        print("\nStopping...")
+        stop_event.set()
+
+        audio_capture_queue.put(None)
+        speech_audio_queue.put(None)
+        stt_text_queue.put(None)
+        llm_response_text_queue.put(None)
+        tts_audio_queue.put(None)
+
+        for w in workers:
+            w.join()
+
     finally:
-        # Spin everything down gracefully.
         recorder.stop()
         recorder.delete()
         porcupine.delete()
-        cobra.delete()
         cheetah.delete()
         orca.delete()
         speaker.stop()
         speaker.delete()
 
-        # Send sentinel and close thread.
-        audio_queue.put(None)
-        playback_thread.join()
-
 
 if __name__ == "__main__":
     setup_environment()
-    run_assistant()
+    main()
