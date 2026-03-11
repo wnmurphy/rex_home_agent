@@ -8,11 +8,10 @@ class Config:
     PICOVOICE_LICENSE_KEY = os.getenv("PICOVOICE_LICENSE_KEY")
 
     # Audio settings
-    SAMPLE_RATE = 16000
-    CHUNK_SIZE = 1024
-    BUFFER_SIZE = 4096
-    BIT_DEPTH = 32768.0
+    SAMPLE_RATE_INPUT_AUDIO = 16000
+    SAMPLE_RATE_OUTPUT_AUDIO = 22050
     AUDIO_FRAME_LENGTH_IN_SAMPLES = 512
+    SPEAKER_BUFFER_SIZE_IN_SECONDS = 300
 
     # VAD settings
     VOICE_DETECTION_THRESHOLD = 0.2 # probability of voice activity required to trigger assistant.
@@ -24,7 +23,6 @@ class Config:
 
     # STT settings
     WHISPER_MODEL = "base"
-    MIN_RECORDED_FRAMES_FOR_TRANSCRIPTION = 100
 
     # Ollama settings
     OLLAMA_HOST = "http://localhost:11434"

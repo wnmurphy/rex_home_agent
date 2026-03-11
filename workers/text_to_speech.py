@@ -22,17 +22,16 @@ class TextToSpeechWorker(WorkerThread):
             self.stream.close()
 
     def process(self, llm_response_chunk):
-        print(f"TextToSpeechWorker received: {llm_response_chunk}")
 
         # Flush the speech synthesis stream if this is the end of a model's response.
         if llm_response_chunk == "END_UTTERANCE":
             final_pcm = self.stream.flush()
             if final_pcm:
-                self.out_q.put(final_pcm)
+                self.out_q.put(final_pcm, block=True)
             return None
 
         # Otherwise synthesize speech for current chunk.
         pcm = self.stream.synthesize(llm_response_chunk)
         if pcm:
-            self.out_q.put(pcm)
+            self.out_q.put(pcm, block=True)
         return None

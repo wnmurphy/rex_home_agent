@@ -42,7 +42,7 @@ def main():
     speech_audio_queue = Queue(maxsize=32)
     stt_text_queue = Queue(maxsize=8)
     llm_response_text_queue = Queue(maxsize=32)
-    tts_audio_queue = Queue(maxsize=64)
+    tts_audio_queue = Queue(maxsize=4)
 
     # Initialize engines to pass into workers.
     recorder = PvRecorder(frame_length=Config.AUDIO_FRAME_LENGTH_IN_SAMPLES)
@@ -60,7 +60,11 @@ def main():
         access_key=Config.PICOVOICE_LICENSE_KEY,
         # model_path=Config.TTS_MODEL_PATH
     )
-    speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16)
+    speaker = PvSpeaker(
+        sample_rate=orca.sample_rate,
+        bits_per_sample=16,
+        buffer_size_secs=Config.SPEAKER_BUFFER_SIZE_IN_SECONDS,
+    )
 
     # Initialize workers, where each worker has its own engine and thread.
     workers = [
