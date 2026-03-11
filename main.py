@@ -1,3 +1,7 @@
+import threading
+import queue
+import time
+
 import pvcheetah
 import pvcobra, pvporcupine, ollama
 import pvorca
@@ -50,6 +54,18 @@ def run_assistant():
     )
     speaker = PvSpeaker(sample_rate=orca.sample_rate, bits_per_sample=16)
     speaker.start()
+    audio_queue = queue.Queue()
+
+    def _play_audio_worker():
+        while True:
+            next_pcm = audio_queue.get()
+            if next_pcm is None:
+                break
+            speaker.write(next_pcm)
+            audio_queue.task_done()
+
+    playback_thread = threading.Thread(target=_play_audio_worker, daemon=True)
+    playback_thread.start()
 
     print("Assistant Active. Say 'Hey Rex' to start...")
 
@@ -62,8 +78,6 @@ def run_assistant():
             # When we detect the wake word...
             if porcupine.process(pcm) >= 0:
                 print("\n[Wake Word Detected] How can I help?")
-
-                silent_frames = 0 # Track silence to know when user has finished speaking.
 
                 current_voice_submission = ""
 
@@ -81,6 +95,7 @@ def run_assistant():
                         print(f"current_voice_submission: {current_voice_submission}")
                         break
 
+                # Send the user input to Ollama to generate a response.
                 print(f"User: {current_voice_submission}")
                 response_stream = ollama.chat(
                     model=Config.OLLAMA_MODEL,
@@ -88,29 +103,45 @@ def run_assistant():
                     stream=True,
                 )
 
+                # Open Orca stream
                 stream = orca.stream_open()
 
+                # Take the streaming response from Ollama and play it back.
                 for text_chunk in response_stream:
                     text_segment = text_chunk['message']['content']
                     if text_segment:
                         pcm = stream.synthesize(text_segment)
                         if pcm is not None:
-                            speaker.write(pcm)
-                speaker.flush()
+                            audio_queue.put(pcm)
+
+                # Get the final tail of the audio from Orca.
+                final_pcm = stream.flush()
+                if final_pcm is not None:
+                    audio_queue.put(final_pcm)
+
+                # Close the Orca stream.
                 stream.close()
 
-                # print(f"AI: {response['message']['content']}")
+                # Wait here for the background worker to finish playing the audio.
+                audio_queue.join()
+
 
     except KeyboardInterrupt:
         print("\nStopping...")
     finally:
+        # Spin everything down gracefully.
         recorder.stop()
+        recorder.delete()
         porcupine.delete()
         cobra.delete()
-        recorder.delete()
         cheetah.delete()
         orca.delete()
         speaker.stop()
+        speaker.delete()
+
+        # Send sentinel and close thread.
+        audio_queue.put(None)
+        playback_thread.join()
 
 
 if __name__ == "__main__":
