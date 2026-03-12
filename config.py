@@ -33,6 +33,7 @@ class Config:
 
     # Sounds
     PATH_TO_WAKE_SOUND = "./sounds/wake_sound_pcm.wav"
+    PATH_TO_THINKING_SOUND = "./sounds/thinking_sound_pcm.wav"
 
     # Prompts
     SYSTEM_PROMPT_PATH = "./prompts/system_prompt.yaml"

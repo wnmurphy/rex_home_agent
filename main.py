@@ -94,7 +94,8 @@ def main():
         # Sends text to the language model for processing, and writes streaming model output to the LLM response queue.
         LLMWorker(
             in_q=stt_text_queue,
-            out_q=llm_response_text_queue
+            out_q=llm_response_text_queue,
+            speaker=speaker,
         ),
 
         # Converts text from LLM response queue into synthesized speech, and writes speech chunks to the TTS queue.
@@ -108,7 +109,7 @@ def main():
         SpeakerWorker(
             in_q=tts_audio_queue,
             out_q=None,
-            speaker=speaker
+            speaker=speaker,
         ),
     ]
 

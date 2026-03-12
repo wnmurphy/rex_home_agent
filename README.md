@@ -35,6 +35,43 @@ This should run comfortably on a MacBook Pro, Mac Mini, Mac Studio, etc. with:
 8. Get a [Picovoice license key](https://console.picovoice.ai/signup) and set it as `PICOVOICE_LICENSE_KEY` in your environment variables.
 
 
+## Architecture
+
+The agent is structured as a series of independent workers. 
+
+Each worker handles a separate function, and runs in its own thread.
+
+Data is streamed between workers via queues.
+
+```
+User voice input
+↓
+Microphone
+↓
+Audio Capture Worker
+↓
+[captured audio queue]
+↓
+Wake Word Detection Worker
+↓ 
+[speech audio queue]
+↓
+Speech-To-Text Worker
+↓
+[STT text queue]
+↓
+LLM Worker
+↓
+[LLM response queue]
+↓
+Text-To-Speech Worker
+↓
+[TTS audio queue]
+↓
+Speaker → Agent voice output
+```
+
+
 ## TODO Items
 
 - [ ] Implement barge-in
@@ -47,4 +84,8 @@ This should run comfortably on a MacBook Pro, Mac Mini, Mac Studio, etc. with:
 
 ## Miscellaneous
 
-Wake sound credit: kickhat on [Freesound.org](https://freesound.org/people/kickhat/sounds/264447/)
+
+Sound credits:
+* Wake sound: kickhat on [Freesound.org](https://freesound.org/people/kickhat/sounds/264447/)
+* Thinking sound 1: Tissman on [Freesound.org](https://freesound.org/people/Tissman/sounds/521848)
+* Thinking sound 2: DanJFilms on [Freesound.org](https://freesound.org/people/DanJFilms/sounds/845167/)
