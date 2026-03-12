@@ -80,7 +80,8 @@ def main():
         WakeWordDetectionWorker(
             in_q=audio_capture_queue,
             out_q=speech_audio_queue,
-            porcupine=porcupine
+            porcupine=porcupine,
+            speaker=speaker,
         ),
 
         # Converts speech audio in the speech queue to text, and writes that text to the text queue.

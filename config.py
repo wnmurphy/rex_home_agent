@@ -30,3 +30,6 @@ class Config:
 
     # TTS settings
     TTS_MODEL_PATH = "./models/orca_params_en_male.pv"
+
+    # Sounds
+    PATH_TO_WAKE_SOUND = "./sounds/wake_sound_pcm.wav"

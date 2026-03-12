@@ -46,3 +46,7 @@ This should run comfortably on a MacBook Pro, Mac Mini, Mac Studio, etc. with:
 - [ ] Add a wake sound effect when the wake word is detected.
 - [ ] Add a thinking sound effect when the agent is processing a response.
 - [ ] Add a sleep sound effect when the agent goes back to sleep.
+
+## Miscellaneous
+
+Wake sound credit: kickhat on [Freesound.org](https://freesound.org/people/kickhat/sounds/264447/)
