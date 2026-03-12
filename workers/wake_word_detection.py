@@ -17,13 +17,9 @@ class WakeWordDetectionWorker(WorkerThread):
         super().run()
 
     def process(self, pcm):
-        # print(f"WakeWordDetectionWorker got: {pcm}")
         if self.porcupine.process(pcm) >= 0:
             print("\n[Wake Word Detected] How can I help?")
-
-            # Play the wake sound
             play_wav(self.speaker, Config.PATH_TO_WAKE_SOUND)
-
             self.out_q.put(("WAKE", None))
         else:
             self.out_q.put(("PCM", pcm))

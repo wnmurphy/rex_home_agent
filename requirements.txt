@@ -18,3 +18,6 @@ ollama
 # Converting outgoing model response from text-to-speech.
 pvorca
 pvspeaker
+
+# Prompt management.
+pyyaml

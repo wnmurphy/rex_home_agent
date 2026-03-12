@@ -18,7 +18,6 @@ class SpeechToTextWorker(WorkerThread):
         super().run()
 
     def process(self, item):
-        # print(f"SpeechToTextWorker received: {item}")
 
         item_type, data = item
 
