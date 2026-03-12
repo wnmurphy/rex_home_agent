@@ -58,7 +58,7 @@ def main():
     )
     orca = pvorca.create(
         access_key=Config.PICOVOICE_LICENSE_KEY,
-        # model_path=Config.TTS_MODEL_PATH
+        model_path=Config.TTS_MODEL_PATH
     )
     speaker = PvSpeaker(
         sample_rate=orca.sample_rate,

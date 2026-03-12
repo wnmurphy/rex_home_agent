@@ -29,7 +29,7 @@ class Config:
     OLLAMA_MODEL = "huihui_ai/mistral-small-abliterated:latest"
 
     # TTS settings
-    TTS_MODEL_PATH = "./models/orca_params_en_male.pv"
+    TTS_MODEL_PATH = "./models/orca_params_en_female.pv"
 
     # Sounds
     PATH_TO_WAKE_SOUND = "./sounds/wake_sound_pcm.wav"

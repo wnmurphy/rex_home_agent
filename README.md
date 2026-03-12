@@ -40,10 +40,8 @@ This should run comfortably on a MacBook Pro, Mac Mini, Mac Studio, etc. with:
 - [ ] Implement barge-in
 - [ ] Sustain conversation. Don't require wake word unless no user voice input for ~5 minutes, etc.
 - [ ] Add Agent class from LangChain.
-- [ ] Set a system prompt for agent, specific to voice mode (keep responses short, etc.)
 - [ ] Add model memory like MemoryBuffer from LangChain.
 - [ ] Add tool to perform a web search.
-- [ ] Add a wake sound effect when the wake word is detected.
 - [ ] Add a thinking sound effect when the agent is processing a response.
 - [ ] Add a sleep sound effect when the agent goes back to sleep.
 
