@@ -1,9 +1,28 @@
 import threading
-import ollama
+import uuid
+from typing import List
+
+from langchain.agents import create_agent
+from langchain_core.messages import AIMessageChunk
+from langchain_ollama import ChatOllama
+from langgraph.checkpoint.memory import InMemorySaver
+from langchain.tools import tool
 
 from config import Config
 from utils import load_prompt, thinking_sound_loop
 from .worker_thread import WorkerThread
+
+
+@tool
+def validate_user(user_id: int, addresses: List[str]) -> bool:
+    """Validate user using historical addresses.
+
+    Args:
+        user_id (int): the user ID.
+        addresses (List[str]): Previous addresses as a list of strings.
+    """
+    return True
+
 
 class LLMWorker(WorkerThread):
     """
@@ -13,8 +32,15 @@ class LLMWorker(WorkerThread):
     """
     def __init__(self, in_q, out_q, speaker, **kwargs):
         super().__init__(in_q, out_q, speaker=speaker, **kwargs)
-        prompt_dict = load_prompt(Config.SYSTEM_PROMPT_PATH)
-        self.system_prompt = prompt_dict["prompt_text"]
+        self.agent = create_agent(
+            model=ChatOllama(
+                model=Config.OLLAMA_MODEL,
+                validate_model_on_init=True,
+            ),
+            tools=[validate_user],
+            system_prompt=load_prompt(Config.SYSTEM_PROMPT_PATH).get("prompt_text", {}),
+            checkpointer=InMemorySaver(),
+        )
 
     def run(self):
         print("LLM: Thread running...")
@@ -32,27 +58,35 @@ class LLMWorker(WorkerThread):
         t.start()
 
         # Process the streaming response from model.
-        response_stream = ollama.chat(
-            model=Config.OLLAMA_MODEL,
-            messages=[
-                {'role': 'system', 'content': self.system_prompt},
-                {'role': 'user', 'content': user_input},
-            ],
-            stream=True,
+        response_stream = self.agent.stream(
+            input={"messages": [{"role": "user", "content": user_input}]},
+            config={"configurable": {"thread_id": str(uuid.uuid4())}},
+            stream_mode="messages",
         )
+
         first_token = True
         for chunk in response_stream:
-            text_segment = chunk.get("message", {}).get("content")
 
             # If model response is ready, terminate thinking sound.
             if first_token:
                 thinking_sound_loop_stop_event.set()
                 first_token = False
 
+            token_chunk = chunk[0] # Chunks are tuples
+            if not token_chunk:
+                continue
+
+            # Printing activity for debugging visibility
+            # if token_chunk.content:
+            #     if isinstance(token_chunk, AIMessageChunk):
+            #         print(f"Agent: {token_chunk.content}")
+            # elif token_chunk.tool_calls:
+            #     print(f"Calling tools: {[tc['name'] for tc in token_chunk.tool_calls]}")
+
             # Add model response to the outbound queue.
-            if text_segment:
+            if token_chunk and token_chunk.content and isinstance(token_chunk, AIMessageChunk):
                 if self.out_q:
-                    self.out_q.put(text_segment)
+                    self.out_q.put(token_chunk.content)
 
         # Once model response completes, indicate this with a sentinel "stop" word.
         self.out_q.put("END_UTTERANCE")

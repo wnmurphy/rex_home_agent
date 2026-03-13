@@ -14,7 +14,7 @@ from workers.audio_capture import AudioCaptureWorker
 from workers.llm import LLMWorker
 from workers.speaker import SpeakerWorker
 from workers.speech_to_text import SpeechToTextWorker
-from workers.text_to_speech import TextToSpeechWorker
+from workers.text_to_speech import TextToSpeechWorkerOrca
 from workers.wake_word_detection import WakeWordDetectionWorker
 
 
@@ -99,7 +99,7 @@ def main():
         ),
 
         # Converts text from LLM response queue into synthesized speech, and writes speech chunks to the TTS queue.
-        TextToSpeechWorker(
+        TextToSpeechWorkerOrca(
             in_q=llm_response_text_queue,
             out_q=tts_audio_queue,
             orca=orca

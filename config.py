@@ -16,7 +16,7 @@ class Config:
     # VAD settings
     VOICE_DETECTION_THRESHOLD = 0.2 # probability of voice activity required to trigger assistant.
 
-    SECONDS_OF_SILENCE_THAT_INDICATES_USER_IS_DONE_SPEAKING = 3.0
+    SECONDS_OF_SILENCE_THAT_INDICATES_USER_IS_DONE_SPEAKING = 1.0
 
     # Wake word settings
     PORCUPINE_WAKE_WORD_PATH = "./models/Hey-Rex_en_mac_v4_0_0.ppn"
