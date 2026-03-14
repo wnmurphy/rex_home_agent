@@ -1,5 +1,4 @@
-import random
-import time
+import threading
 import wave
 import yaml
 
@@ -15,10 +14,16 @@ def load_wav_pcm(wav_path):
         return array("h", frames)
 
 def thinking_sound_loop(stop_event, audio_queue, wav_pcm):
+    i = 0
     while not stop_event.is_set():
-        audio_queue.put(("thinking", wav_pcm))
-        random_sleep = random.uniform(0.8, 1.2)
-        time.sleep(random_sleep)
+        # Play in frame-sized chunks to enable thinking sound to be interrupted.
+        frame = wav_pcm[i:i+Config.AUDIO_FRAME_LENGTH_IN_SAMPLES]
+        if not frame:
+            i = 0
+            continue
+        audio_queue.put(("thinking", frame))
+        i += Config.AUDIO_FRAME_LENGTH_IN_SAMPLES
+        threading.Event().wait(0.01)
 
 # Loads a YAML file into a dictionary.
 def load_prompt(prompt_path):
