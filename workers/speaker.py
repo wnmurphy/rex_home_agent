@@ -5,7 +5,7 @@ from .worker_thread import WorkerThread
 
 class SpeakerWorker(WorkerThread):
     """
-    Write PCMs from the tts_audio_queue to the speaker to play audio output.
+    Write PCMs from the audio_playback_queue to the speaker to play audio output.
 
     Buffers because Orca produces variable-rate
     """

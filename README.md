@@ -10,13 +10,12 @@ Should:
 * have tool usage (i.e. do a web search for information past the model's cutoff date)
 * support barge-in (user can interrupt voice output)
 
-
-This project was developed with PyCharm integrated with local models via the Continue plugin and ollama. 
+This project was also developed with PyCharm integrated with local models via the Continue plugin and ollama. 
 I used `qwen3-coder:30b` for the IDE agent, and `qwen2.5-coder:7b` for in-editor autocomplete.
 
 ## Requirements
 
-This should run comfortably on a MacBook Pro, Mac Mini, Mac Studio, etc. with:
+Assuming your main model is ~30B parameters, this should run comfortably on a MacBook Pro, Mac Mini, Mac Studio, etc. with:
 * an M4 chip
 * 48GB RAM
 * 14 CPU cores
@@ -48,9 +47,7 @@ Add the file to `/models` and update the path to this model as `PORCUPINE_WAKE_W
 
 ## Architecture
 
-The agent is structured as a series of independent workers. 
-
-Each worker handles a separate function, and runs in its own thread.
+The voice assistant is structured as a series of independent workers.  Each worker runs in its own thread and handles a separate function.
 
 Data is streamed between workers via queues.
 
@@ -82,11 +79,12 @@ Text-To-Speech Worker
 Speaker → Agent voice output
 ```
 
+Any worker can also write directly to the audio queue as well (i.e. for sound effects like wake and thinking). 
+
 ## TODO Items
 
 - [ ] Implement barge-in
 - [ ] Sustain conversation. Don't require wake word unless no user voice input for ~5 minutes, etc.
-- [ ] Add Agent class from LangChain.
 - [ ] Add model memory like MemoryBuffer from LangChain.
 - [ ] Add a model call for intent extraction.
 - [ ] Add tool to perform a web search.

@@ -4,7 +4,7 @@ class TextToSpeechWorkerOrca(WorkerThread):
     """
     Listens to LLM response queue for model response chunks in text.
     Synthesize each to audio.
-    Add it to the tts_audio_queue.
+    Add it to the audio_playback_queue.
     """
     def __init__(self, in_q, out_q, orca, **kwargs):
         super().__init__(in_q, out_q, orca=orca, **kwargs)
@@ -46,7 +46,7 @@ class TextToSpeechWorkerKokoro(WorkerThread):
     """
     Listens to LLM response queue for model response chunks in text.
     Synthesize each to audio.
-    Add it to the tts_audio_queue.
+    Add it to the audio_playback_queue.
     """
     def __init__(self, in_q, out_q, orca, **kwargs):
         super().__init__(in_q, out_q, orca=orca, **kwargs)

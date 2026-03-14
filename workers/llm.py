@@ -30,8 +30,8 @@ class LLMWorker(WorkerThread):
     Submits them to ollama model,
     Writes chunks of streaming response from ollama model to the llm response queue.
     """
-    def __init__(self, in_q, out_q, speaker, audio_queue, **kwargs):
-        super().__init__(in_q, out_q, speaker=speaker, audio_queue=audio_queue, **kwargs)
+    def __init__(self, in_q, out_q, speaker, audio_playback_queue, **kwargs):
+        super().__init__(in_q, out_q, speaker=speaker, audio_playback_queue=audio_playback_queue, **kwargs)
         self.thinking_sound_pcm = load_wav_pcm(Config.PATH_TO_THINKING_SOUND)
         self.agent = create_agent(
             model=ChatOllama(
@@ -42,6 +42,7 @@ class LLMWorker(WorkerThread):
             system_prompt=load_prompt(Config.SYSTEM_PROMPT_PATH).get("prompt_text", {}),
             checkpointer=InMemorySaver(),
         )
+        self.current_session_id = str(uuid.uuid4())
 
     def run(self):
         print("LLM: Thread running...")
@@ -53,7 +54,7 @@ class LLMWorker(WorkerThread):
         thinking_sound_loop_stop_event = threading.Event()
         t = threading.Thread(
             target=thinking_sound_loop,
-            args=(thinking_sound_loop_stop_event, self.audio_queue, self.thinking_sound_pcm),
+            args=(thinking_sound_loop_stop_event, self.audio_playback_queue, self.thinking_sound_pcm),
             daemon=True
         )
         t.start()
@@ -61,7 +62,7 @@ class LLMWorker(WorkerThread):
         # Process the streaming response from model.
         response_stream = self.agent.stream(
             input={"messages": [{"role": "user", "content": user_input}]},
-            config={"configurable": {"thread_id": str(uuid.uuid4())}},
+            config={"configurable": {"thread_id": self.current_session_id}},
             stream_mode="messages",
         )
 
@@ -70,7 +71,7 @@ class LLMWorker(WorkerThread):
 
             if first_token:
                 thinking_sound_loop_stop_event.set()
-                self.audio_queue.put(("clear_thinking", None))
+                self.audio_playback_queue.put(("clear_thinking", None))
                 first_token = False
 
             token_chunk = chunk[0] # Chunks are tuples

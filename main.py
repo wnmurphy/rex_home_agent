@@ -42,7 +42,7 @@ def main():
     speech_audio_queue = Queue(maxsize=32)
     stt_text_queue = Queue(maxsize=8)
     llm_response_text_queue = Queue(maxsize=32)
-    audio_queue = Queue(maxsize=4)
+    audio_playback_queue = Queue(maxsize=4)
 
     # Initialize engines to pass into workers.
     recorder = PvRecorder(frame_length=Config.AUDIO_FRAME_LENGTH_IN_SAMPLES)
@@ -81,7 +81,7 @@ def main():
             in_q=audio_capture_queue,
             out_q=speech_audio_queue,
             porcupine=porcupine,
-            audio_queue=audio_queue,
+            audio_playback_queue=audio_playback_queue,
         ),
 
         # Converts speech audio in the speech queue to text, and writes that text to the text queue.
@@ -96,19 +96,19 @@ def main():
             in_q=stt_text_queue,
             out_q=llm_response_text_queue,
             speaker=speaker,
-            audio_queue=audio_queue,
+            audio_playback_queue=audio_playback_queue,
         ),
 
         # Converts text from LLM response queue into synthesized speech, and writes speech chunks to the TTS queue.
         TextToSpeechWorkerOrca(
             in_q=llm_response_text_queue,
-            out_q=audio_queue,
+            out_q=audio_playback_queue,
             orca=orca
         ),
 
         # Plays synthesized speech from the TTS queue to the speaker as audio.
         SpeakerWorker(
-            in_q=audio_queue,
+            in_q=audio_playback_queue,
             out_q=None,
             speaker=speaker,
         ),
@@ -131,7 +131,7 @@ def main():
         speech_audio_queue.put(None)
         stt_text_queue.put(None)
         llm_response_text_queue.put(None)
-        audio_queue.put(None)
+        audio_playback_queue.put(None)
 
         for w in workers:
             w.join()
