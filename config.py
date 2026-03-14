@@ -4,8 +4,9 @@ from pathlib import Path
 
 class Config:
 
-    # Picovoice
+    # API Keys
     PICOVOICE_LICENSE_KEY = os.getenv("PICOVOICE_LICENSE_KEY")
+    BRAVE_SEARCH_API_KEY = os.getenv("BRAVE_SEARCH_TOOL_KEY")
 
     # Audio settings
     SAMPLE_RATE_INPUT_AUDIO = 16000

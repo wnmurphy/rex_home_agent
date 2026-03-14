@@ -26,6 +26,6 @@ def thinking_sound_loop(stop_event, audio_playback_queue, wav_pcm):
         threading.Event().wait(0.01)
 
 # Loads a YAML file into a dictionary.
-def load_prompt(prompt_path):
-    with open(prompt_path, "r") as f:
+def load_prompt(prompt_key):
+    with open(f"./prompts/{prompt_key}.yaml", "r") as f:
         return yaml.safe_load(f)

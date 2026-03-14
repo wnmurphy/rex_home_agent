@@ -4,11 +4,12 @@ Rex Home Agent is a personal AI assistant.
 
 Now that consumer hardware can run local LLMs fairly easily, I wanted to see if I could build a private voice assistant.
 
-Should:
-* work out-of-the-box on any M4 Mac
-* have persistent memory
-* have tool usage (i.e. do a web search for information past the model's cutoff date)
-* support barge-in (user can interrupt voice output)
+Features:
+* works out-of-the-box on any M4 Mac.
+* tool usage (i.e. do a web search for information past the model's cutoff date).
+* sound effects for wake word + thinking.
+* persistent memory.
+* supports barge-in (user can interrupt voice output).
 
 This project was also developed with PyCharm integrated with local models via the Continue plugin and ollama. 
 I used `qwen3-coder:30b` for the IDE agent, and `qwen2.5-coder:7b` for in-editor autocomplete.
@@ -38,12 +39,23 @@ Assuming your main model is ~30B parameters, this should run comfortably on a Ma
 8. Get a [Picovoice license key](https://console.picovoice.ai/signup) and set it as `PICOVOICE_LICENSE_KEY` in your environment variables.
 9. Start the agent with `python main.py`
 
+### Setting up web search tooling with Brave
+
+1. Visit [Braze Search API](https://brave.com/search/api/).
+2. Create an account and confirm your email.
+3. Login > Subscription > Select the $5.00 plan (actually free).
+4. API keys > Add API Key > Save
+5. Copy API key and set it as an env var under `BRAVE_SEARCH_API_KEY`.
+
+You get $5 in credit each month, and 1000 searches per month on this plan, so unless you're averaging more than 33 searches a day this should be free.
+
 
 ## Customize your wake word
 
 In your [Picovoice console](https://console.picovoice.ai/ppn), create a new Porcupine wake word model and download it. 
 
 Add the file to `/models` and update the path to this model as `PORCUPINE_WAKE_WORD_PATH` in `config.py`.
+
 
 ## Architecture
 

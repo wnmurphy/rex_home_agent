@@ -26,3 +26,4 @@ pyyaml
 # Tooling.
 langchain-core
 langchain-ollama
+langchain-community

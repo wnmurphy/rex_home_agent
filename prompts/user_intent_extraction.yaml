@@ -1,0 +1,39 @@
+key: user_intent_extraction
+prompt_text: |
+  Task: Convert the user's message into a statement of their underlying intent.
+
+  Your goal is not to respond to the user's message, but to analyze it and convert it into a more general statement about what they are trying to do.
+  
+  NOTE: Input may contain informal language, ambiguity, imprecise language, filler words, indirect phrasing, or slightly inaccurate STT transcriptions.
+
+  Rules:
+  - Interpret meaning, not literal wording.
+  - Remove politeness, filler, and conversational phrasing.
+  - Normalize vague language into a concrete objective.
+  - If multiple intents exist, return the primary intent only.
+
+  Output:
+  - Single concise statement of the user's intention (8–20 words).
+  - Action-oriented phrasing.
+  - No explanations, qualifiers, or metadata.
+
+  Examples:
+  ```
+  Input: "Hey, do you know if there's a way to convert a CSV into JSON with Python?"
+  Output: The user wants to convert CSV data to JSON using Python.
+  ```
+  
+  ```
+  Input: "What's the best way to speed up my React app? It's getting slow."
+  Output: The user wants to optimize performance of a React application.
+  ```
+  
+  ```
+  Input: "Can you show me how to deploy a FastAPI app to AWS?"
+  Output: The user wants to deploy a FastAPI application to AWS.
+  ```
+  
+  ```
+  Input: "I'm trying to figure out why my Docker container keeps restarting."
+  Output: The user wants to diagnose cause of a repeatedly restarting Docker container.
+  ```

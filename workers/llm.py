@@ -2,26 +2,32 @@ import threading
 import uuid
 from typing import List
 
-from langchain.agents import create_agent
+from langchain.agents import create_agent, AgentState
+from langchain.chat_models import init_chat_model
+from langchain_community.tools import BraveSearch
 from langchain_core.messages import AIMessageChunk
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import InMemorySaver
-from langchain.tools import tool
+
 
 from config import Config
 from utils import load_prompt, thinking_sound_loop, load_wav_pcm
 from .worker_thread import WorkerThread
 
 
-@tool
-def validate_user(user_id: int, addresses: List[str]) -> bool:
-    """Validate user using historical addresses.
+brave_search_tool = BraveSearch.from_search_kwargs(search_kwargs={
+    "count": 3,
+    "country": "us",
+})
 
-    Args:
-        user_id (int): the user ID.
-        addresses (List[str]): Previous addresses as a list of strings.
-    """
-    return True
+agent_tools = [
+    brave_search_tool,
+]
+
+
+# Define a schema for the agent; what additional params to expect.
+class AgentStateSchema(AgentState):
+    user_intent: str
 
 
 class LLMWorker(WorkerThread):
@@ -33,14 +39,16 @@ class LLMWorker(WorkerThread):
     def __init__(self, in_q, out_q, speaker, audio_playback_queue, **kwargs):
         super().__init__(in_q, out_q, speaker=speaker, audio_playback_queue=audio_playback_queue, **kwargs)
         self.thinking_sound_pcm = load_wav_pcm(Config.PATH_TO_THINKING_SOUND)
-        self.agent = create_agent(
-            model=ChatOllama(
+        self.model = ChatOllama(
                 model=Config.OLLAMA_MODEL,
                 validate_model_on_init=True,
-            ),
-            tools=[validate_user],
-            system_prompt=load_prompt(Config.SYSTEM_PROMPT_PATH).get("prompt_text", {}),
+        )
+        self.agent = create_agent(
+            model=self.model,
+            tools=agent_tools,
+            system_prompt=load_prompt("system_prompt").get("prompt_text", {}),
             checkpointer=InMemorySaver(),
+            state_schema=AgentStateSchema,
         )
         self.current_session_id = str(uuid.uuid4())
 
@@ -59,9 +67,33 @@ class LLMWorker(WorkerThread):
         )
         t.start()
 
+        # # Get chat history to add conversational context to intent extraction.
+        # state = self.agent.get_state(
+        #     config={"configurable": {"thread_id": self.current_session_id}}
+        # )
+        # recent_messages = state.values.get("messages", [])[-5:]
+        # context_messages = [
+        #     (m.type, m.content)
+        #     for m in recent_messages
+        #     if getattr(m, "content", None) and not getattr(m, "tool_calls", None)
+        # ]
+
+        # Get the user's actual intention
+        user_intent_extraction_prompt = load_prompt("user_intent_extraction").get("prompt_text", {})
+        user_intent_statement = self.model.invoke([
+            ("system", user_intent_extraction_prompt),
+            # *context_messages,
+            ("human", user_input),
+        ]).content
+
+        print(f"user intent: {user_intent_statement}")
+
         # Process the streaming response from model.
         response_stream = self.agent.stream(
-            input={"messages": [{"role": "user", "content": user_input}]},
+            input={
+                "messages": [{"role": "user", "content": user_input}],
+                "user_intent": user_intent_statement,
+            },
             config={"configurable": {"thread_id": self.current_session_id}},
             stream_mode="messages",
         )
