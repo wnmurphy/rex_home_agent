@@ -8,6 +8,7 @@ class TextToSpeechWorkerOrca(WorkerThread):
     """
     def __init__(self, in_q, out_q, orca, **kwargs):
         super().__init__(in_q, out_q, orca=orca, **kwargs)
+        self.text_buffer = ""
 
     def run(self):
         print("TEXT_TO_SPEECH: Thread running...")
@@ -18,7 +19,7 @@ class TextToSpeechWorkerOrca(WorkerThread):
         finally:
             final_pcm = self.stream.flush()
             if final_pcm:
-                self.out_q.put(final_pcm)
+                self.out_q.put(("tts", final_pcm))
             self.stream.close()
 
     def process(self, llm_response_chunk):
@@ -27,13 +28,17 @@ class TextToSpeechWorkerOrca(WorkerThread):
         if llm_response_chunk == "END_UTTERANCE":
             final_pcm = self.stream.flush()
             if final_pcm:
-                self.out_q.put(final_pcm, block=True)
+                self.out_q.put(("tts", final_pcm), block=True)
             return None
 
         # Otherwise synthesize speech for current chunk.
-        pcm = self.stream.synthesize(llm_response_chunk)
-        if pcm:
-            self.out_q.put(pcm, block=True)
+        self.text_buffer += llm_response_chunk
+
+        if len(self.text_buffer) > 40 or llm_response_chunk.endswith((".", "!", "?", ",")):
+            pcm = self.stream.synthesize(self.text_buffer)
+            if pcm:
+                self.out_q.put(("tts", pcm))
+            self.text_buffer = ""
         return None
 
 

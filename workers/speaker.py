@@ -12,16 +12,30 @@ class SpeakerWorker(WorkerThread):
     def __init__(self, in_q, out_q, speaker, **kwargs):
         super().__init__(in_q, out_q, speaker=speaker, **kwargs)
         self.buffer = array("h")
+        self.tts_active = False
 
-    def process(self, pcm):
+    def process(self, item):
         frame_length = Config.AUDIO_FRAME_LENGTH_IN_SAMPLES
 
-        if not pcm:
-            return None
+        if not item:
+            return
 
-        # Orca TTS produces variable-size PCMs. Buffer and re-chunk here...
-        self.buffer.extend(pcm)
-        while len(self.buffer) >= frame_length:
-            frame = self.buffer[:frame_length]
-            self.buffer = self.buffer[frame_length:]
-            self.speaker.write(frame)
+        tag, pcm = item
+
+        if tag == "clear_thinking":
+            self.buffer.clear()
+            return
+
+        if tag in ["wake", "thinking"]:
+            if not self.tts_active:
+                self.speaker.write(pcm)
+            return
+
+        if tag == "tts":
+            self.tts_active = True
+            # Orca TTS produces variable-size PCMs. Buffer and re-chunk here...
+            self.buffer.extend(pcm)
+            while len(self.buffer) >= frame_length:
+                frame = self.buffer[:frame_length]
+                self.buffer = self.buffer[frame_length:]
+                self.speaker.write(frame)

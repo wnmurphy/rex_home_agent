@@ -9,7 +9,7 @@ from langgraph.checkpoint.memory import InMemorySaver
 from langchain.tools import tool
 
 from config import Config
-from utils import load_prompt, thinking_sound_loop
+from utils import load_prompt, thinking_sound_loop, load_wav_pcm
 from .worker_thread import WorkerThread
 
 
@@ -30,8 +30,9 @@ class LLMWorker(WorkerThread):
     Submits them to ollama model,
     Writes chunks of streaming response from ollama model to the llm response queue.
     """
-    def __init__(self, in_q, out_q, speaker, **kwargs):
-        super().__init__(in_q, out_q, speaker=speaker, **kwargs)
+    def __init__(self, in_q, out_q, speaker, audio_queue, **kwargs):
+        super().__init__(in_q, out_q, speaker=speaker, audio_queue=audio_queue, **kwargs)
+        self.thinking_sound_pcm = load_wav_pcm(Config.PATH_TO_THINKING_SOUND)
         self.agent = create_agent(
             model=ChatOllama(
                 model=Config.OLLAMA_MODEL,
@@ -52,7 +53,7 @@ class LLMWorker(WorkerThread):
         thinking_sound_loop_stop_event = threading.Event()
         t = threading.Thread(
             target=thinking_sound_loop,
-            args=(thinking_sound_loop_stop_event, self.speaker),
+            args=(thinking_sound_loop_stop_event, self.audio_queue, self.thinking_sound_pcm),
             daemon=True
         )
         t.start()
@@ -67,9 +68,9 @@ class LLMWorker(WorkerThread):
         first_token = True
         for chunk in response_stream:
 
-            # If model response is ready, terminate thinking sound.
             if first_token:
                 thinking_sound_loop_stop_event.set()
+                self.audio_queue.put(("clear_thinking", None))
                 first_token = False
 
             token_chunk = chunk[0] # Chunks are tuples
@@ -77,11 +78,11 @@ class LLMWorker(WorkerThread):
                 continue
 
             # Printing activity for debugging visibility
-            # if token_chunk.content:
-            #     if isinstance(token_chunk, AIMessageChunk):
-            #         print(f"Agent: {token_chunk.content}")
-            # elif token_chunk.tool_calls:
-            #     print(f"Calling tools: {[tc['name'] for tc in token_chunk.tool_calls]}")
+            if token_chunk.content:
+                if isinstance(token_chunk, AIMessageChunk):
+                    print(f"Agent: {token_chunk.content}")
+            elif token_chunk.tool_calls:
+                print(f"Calling tools: {[tc['name'] for tc in token_chunk.tool_calls]}")
 
             # Add model response to the outbound queue.
             if token_chunk and token_chunk.content and isinstance(token_chunk, AIMessageChunk):
