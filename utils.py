@@ -4,6 +4,8 @@ import yaml
 
 from array import array
 
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+
 from config import Config
 
 def load_wav_pcm(wav_path):
@@ -29,3 +31,16 @@ def thinking_sound_loop(stop_event, audio_playback_queue, wav_pcm):
 def load_prompt(prompt_key):
     with open(f"./prompts/{prompt_key}.yaml", "r") as f:
         return yaml.safe_load(f)
+
+def convert_message_list_to_string(message_list):
+    type_to_string_map = {
+        AIMessage: "assistant",
+        HumanMessage: "user",
+        SystemMessage: "system",
+    }
+    context_messages = [
+        f"{type_to_string_map[type(m)]}: {m.content}"
+        for m in message_list
+        if getattr(m, "content", None) and not isinstance(m, ToolMessage)
+    ]
+    return "\n\n".join(context_messages)

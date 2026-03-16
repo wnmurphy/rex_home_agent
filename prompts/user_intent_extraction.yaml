@@ -1,10 +1,17 @@
 key: user_intent_extraction
 prompt_text: |
+
+  ## Guidelines
+
   Task: Convert the user's message into a statement of their underlying intent.
 
-  Your goal is not to respond to the user's message, but to analyze it and convert it into a more general statement about what they are trying to do.
-  
-  NOTE: Input may contain informal language, ambiguity, imprecise language, filler words, indirect phrasing, or slightly inaccurate STT transcriptions.
+  Do not to respond to the user's message. Analyze it and convert it into a more general statement about what they are trying to do.
+
+  You'll receive the user's current message and the most recent prior chat messages, so you have a better understanding of what the current conversation is about.
+  Focus primarily on the user's current message, and use the most recent prior messages if you need more context.
+  Note that the current message may represent a change in topic.
+
+  NOTE: The user's message may contain informal language, ambiguity, imprecise language, filler words, indirect phrasing, or slightly inaccurate STT transcriptions.
 
   Rules:
   - Interpret meaning, not literal wording.
@@ -17,23 +24,31 @@ prompt_text: |
   - Action-oriented phrasing.
   - No explanations, qualifiers, or metadata.
 
-  Examples:
+  ## Examples
   ```
-  Input: "Hey, do you know if there's a way to convert a CSV into JSON with Python?"
-  Output: The user wants to convert CSV data to JSON using Python.
-  ```
-  
-  ```
-  Input: "What's the best way to speed up my React app? It's getting slow."
-  Output: The user wants to optimize performance of a React application.
+  user input: "Hey, do you know if there's a way to convert a CSV into JSON with Python?"
+  output: The user wants to convert CSV data to JSON using Python.
   ```
   
   ```
-  Input: "Can you show me how to deploy a FastAPI app to AWS?"
-  Output: The user wants to deploy a FastAPI application to AWS.
+  user input: "What's the best way to speed up my React app? It's getting slow."
+  output: The user wants to optimize performance of a React application.
   ```
   
   ```
-  Input: "I'm trying to figure out why my Docker container keeps restarting."
-  Output: The user wants to diagnose cause of a repeatedly restarting Docker container.
+  user input: "Can you show me how to deploy a FastAPI app to AWS?"
+  output: The user wants to deploy a FastAPI application to AWS.
   ```
+  
+  ```
+  user input: "I'm trying to figure out why my Docker container keeps restarting."
+  output: The user wants to diagnose cause of a repeatedly restarting Docker container.
+  ```
+
+  ## Most recent chat messages
+
+  {most_recent_chat_history}
+
+  ## User input
+  
+  {user_input}

@@ -6,12 +6,13 @@ from langchain.agents import create_agent, AgentState
 from langchain.chat_models import init_chat_model
 from langchain_community.tools import BraveSearch
 from langchain_core.messages import AIMessageChunk
+from langchain_core.prompts import PromptTemplate
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import InMemorySaver
 
 
 from config import Config
-from utils import load_prompt, thinking_sound_loop, load_wav_pcm
+from utils import load_prompt, thinking_sound_loop, load_wav_pcm, convert_message_list_to_string
 from .worker_thread import WorkerThread
 
 
@@ -67,24 +68,25 @@ class LLMWorker(WorkerThread):
         )
         t.start()
 
-        # # Get chat history to add conversational context to intent extraction.
-        # state = self.agent.get_state(
-        #     config={"configurable": {"thread_id": self.current_session_id}}
-        # )
-        # recent_messages = state.values.get("messages", [])[-5:]
-        # context_messages = [
-        #     (m.type, m.content)
-        #     for m in recent_messages
-        #     if getattr(m, "content", None) and not getattr(m, "tool_calls", None)
-        # ]
+        # Get chat history to add conversational context to user intent extraction.
+        state = self.agent.get_state(
+            config={"configurable": {"thread_id": self.current_session_id}}
+        )
+        recent_messages = state.values.get("messages", [])[-5:]
+        context_messages_as_text = convert_message_list_to_string(recent_messages)
 
         # Get the user's actual intention
-        user_intent_extraction_prompt = load_prompt("user_intent_extraction").get("prompt_text", {})
-        user_intent_statement = self.model.invoke([
-            ("system", user_intent_extraction_prompt),
-            # *context_messages,
-            ("human", user_input),
-        ]).content
+        user_intent_prompt_text = load_prompt("user_intent_extraction").get("prompt_text", {})
+        user_intent_prompt = PromptTemplate(
+            template=user_intent_prompt_text,
+            input_variables=["most_recent_chat_history", "user_input"],
+        )
+        input_variables = {
+            "most_recent_chat_history": context_messages_as_text,
+            "user_input": user_input,
+        }
+        intent_chain = user_intent_prompt | self.model
+        user_intent_statement = intent_chain.invoke(input_variables).content
 
         print(f"user intent: {user_intent_statement}")
 
