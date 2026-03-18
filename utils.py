@@ -17,7 +17,10 @@ def load_wav_pcm(wav_path):
 
 def thinking_sound_loop(stop_event, audio_playback_queue, wav_pcm):
     i = 0
-    while not stop_event.is_set():
+    while True:
+        if stop_event.is_set():
+            return
+
         # Play in frame-sized chunks to enable thinking sound to be interrupted.
         frame = wav_pcm[i:i+Config.AUDIO_FRAME_LENGTH_IN_SAMPLES]
         if not frame:

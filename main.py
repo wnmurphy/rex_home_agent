@@ -38,11 +38,11 @@ def main():
     stop_event = threading.Event()
 
     # Create queues for communication between threads.
-    audio_capture_queue = Queue(maxsize=32)
-    speech_audio_queue = Queue(maxsize=32)
+    audio_capture_queue = Queue(maxsize=64)
+    speech_audio_queue = Queue(maxsize=64)
     stt_text_queue = Queue(maxsize=8)
-    llm_response_text_queue = Queue(maxsize=32)
-    audio_playback_queue = Queue(maxsize=4)
+    llm_response_text_queue = Queue(maxsize=64)
+    audio_playback_queue = Queue(maxsize=32)
 
     # Initialize engines to pass into workers.
     recorder = PvRecorder(frame_length=Config.AUDIO_FRAME_LENGTH_IN_SAMPLES)

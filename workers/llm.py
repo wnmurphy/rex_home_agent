@@ -1,11 +1,10 @@
 import threading
+import time
 import uuid
-from typing import List
 
 from langchain.agents import create_agent, AgentState
-from langchain.chat_models import init_chat_model
 from langchain_community.tools import BraveSearch
-from langchain_core.messages import AIMessageChunk
+from langchain_core.messages import AIMessageChunk, ToolMessage, AIMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_ollama import ChatOllama
 from langgraph.checkpoint.memory import InMemorySaver
@@ -17,7 +16,7 @@ from .worker_thread import WorkerThread
 
 
 brave_search_tool = BraveSearch.from_search_kwargs(search_kwargs={
-    "count": 3,
+    "count": 10,
     "country": "us",
 })
 
@@ -68,61 +67,62 @@ class LLMWorker(WorkerThread):
         )
         t.start()
 
-        # Get chat history to add conversational context to user intent extraction.
-        state = self.agent.get_state(
-            config={"configurable": {"thread_id": self.current_session_id}}
-        )
-        recent_messages = state.values.get("messages", [])[-5:]
-        context_messages_as_text = convert_message_list_to_string(recent_messages)
-
-        # Get the user's actual intention
-        user_intent_prompt_text = load_prompt("user_intent_extraction").get("prompt_text", {})
-        user_intent_prompt = PromptTemplate(
-            template=user_intent_prompt_text,
-            input_variables=["most_recent_chat_history", "user_input"],
-        )
-        input_variables = {
-            "most_recent_chat_history": context_messages_as_text,
-            "user_input": user_input,
-        }
-        intent_chain = user_intent_prompt | self.model
-        user_intent_statement = intent_chain.invoke(input_variables).content
-
-        print(f"user intent: {user_intent_statement}")
+        # # Get chat history to add conversational context to user intent extraction.
+        # state = self.agent.get_state(
+        #     config={"configurable": {"thread_id": self.current_session_id}}
+        # )
+        # recent_messages = state.values.get("messages", [])[-5:]
+        # context_messages_as_text = convert_message_list_to_string(recent_messages)
+        #
+        # # Get the user's actual intention
+        # user_intent_prompt_text = load_prompt("user_intent_extraction").get("prompt_text", {})
+        # user_intent_prompt = PromptTemplate(
+        #     template=user_intent_prompt_text,
+        #     input_variables=["most_recent_chat_history", "user_input"],
+        # )
+        # input_variables = {
+        #     "most_recent_chat_history": context_messages_as_text,
+        #     "user_input": user_input,
+        # }
+        # intent_chain = user_intent_prompt | self.model
+        # user_intent_statement = intent_chain.invoke(input_variables).content
+        #
+        # print(f"user intent: {user_intent_statement}")
 
         # Process the streaming response from model.
         response_stream = self.agent.stream(
             input={
                 "messages": [{"role": "user", "content": user_input}],
-                "user_intent": user_intent_statement,
+                # "user_intent": user_intent_statement,
             },
             config={"configurable": {"thread_id": self.current_session_id}},
             stream_mode="messages",
         )
 
-        first_token = True
+        is_first_token_of_response = True
         for chunk in response_stream:
 
-            if first_token:
-                thinking_sound_loop_stop_event.set()
-                self.audio_playback_queue.put(("clear_thinking", None))
-                first_token = False
-
-            token_chunk = chunk[0] # Chunks are tuples
-            if not token_chunk:
+            message = chunk[0] # Chunks are tuples
+            if not message:
                 continue
 
-            # Printing activity for debugging visibility
-            if token_chunk.content:
-                if isinstance(token_chunk, AIMessageChunk):
-                    print(f"Agent: {token_chunk.content}")
-            elif token_chunk.tool_calls:
-                print(f"Calling tools: {[tc['name'] for tc in token_chunk.tool_calls]}")
+            is_user_facing_response = bool(message.content) and isinstance(message, AIMessageChunk)
+
+            if is_user_facing_response and is_first_token_of_response:
+                thinking_sound_loop_stop_event.set()
+                self.audio_playback_queue.put(("clear_thinking", None))
+                is_first_token_of_response = False
+
+            # # Printing activity for debugging visibility
+            # if is_user_facing_response:
+            #         print(f"Agent: {message.content}")
+            # elif hasattr(message, "tool_calls"):
+            #     print(f"Calling tools: {[tc['name'] for tc in message.tool_calls]}")
 
             # Add model response to the outbound queue.
-            if token_chunk and token_chunk.content and isinstance(token_chunk, AIMessageChunk):
+            if message and message.content and isinstance(message, AIMessageChunk):
                 if self.out_q:
-                    self.out_q.put(token_chunk.content)
+                    self.out_q.put(message.content)
 
         # Once model response completes, indicate this with a sentinel "stop" word.
         self.out_q.put("END_UTTERANCE")

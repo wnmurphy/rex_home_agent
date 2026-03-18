@@ -25,24 +25,25 @@ prompt_text: |
   - No explanations, qualifiers, or metadata.
 
   ## Examples
+  
   ```
-  user input: "Hey, do you know if there's a way to convert a CSV into JSON with Python?"
-  output: The user wants to convert CSV data to JSON using Python.
+  User input: "Hey, do you know if there's a way to convert a CSV into JSON with Python?"
+  Response: The user wants to convert CSV data to JSON using Python.
   ```
   
   ```
-  user input: "What's the best way to speed up my React app? It's getting slow."
-  output: The user wants to optimize performance of a React application.
+  User input: "What's the best way to speed up my React app? It's getting slow."
+  Response: The user wants to optimize performance of a React application.
   ```
   
   ```
-  user input: "Can you show me how to deploy a FastAPI app to AWS?"
-  output: The user wants to deploy a FastAPI application to AWS.
+  User input: "Can you show me how to deploy a FastAPI app to AWS?"
+  Response: The user wants to deploy a FastAPI application to AWS.
   ```
   
   ```
-  user input: "I'm trying to figure out why my Docker container keeps restarting."
-  output: The user wants to diagnose cause of a repeatedly restarting Docker container.
+  User input: "I'm trying to figure out why my Docker container keeps restarting."
+  Response: The user wants to diagnose cause of a repeatedly restarting Docker container.
   ```
 
   ## Most recent chat messages

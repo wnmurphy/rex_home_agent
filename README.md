@@ -33,7 +33,7 @@ Assuming your main model is ~30B parameters, this should run comfortably on a Ma
 2. Install Ollama with `brew install ollama`.
 3. Start Ollama with `brew services start ollama`.
 4. Download a model like Mistral Small with `ollama pull huihui_ai/mistral-small-abliterated:latest`.
-5. Set this model name as `OLLAMA_MODEL` in config.py
+5. Set this model name as `OLLAMA_MODEL_PRIMARY` in config.py
 6. Activate the virtual environment with `source .venv/bin/activate`.
 7. Install Python dependencies with `pip3 install -r requirements.txt`. 
 8. Get a [Picovoice license key](https://console.picovoice.ai/signup) and set it as `PICOVOICE_LICENSE_KEY` in your environment variables.

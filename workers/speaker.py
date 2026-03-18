@@ -1,4 +1,5 @@
 from array import array
+from queue import Empty
 
 from config import Config
 from .worker_thread import WorkerThread
@@ -23,6 +24,8 @@ class SpeakerWorker(WorkerThread):
 
         tag, pcm = item
 
+        # print(f"Speaker worker got: {tag}")
+
         if tag == "clear_thinking":
             self.buffer.clear()
             return
@@ -35,11 +38,6 @@ class SpeakerWorker(WorkerThread):
             return
 
         if tag == "tts":
+            # NOTE: About 8s between when we start receiving TTS PCMs here and when we actually hear the speech.
             self.is_tts_playing = True
-            # Orca TTS produces variable-size PCMs. Buffer and re-chunk here...
-            self.buffer.extend(pcm)
-            while len(self.buffer) >= frame_length:
-                frame = self.buffer[:frame_length]
-                self.buffer = self.buffer[frame_length:]
-                self.speaker.write(frame)
-            self.is_tts_playing = False
+            self.speaker.write(pcm)
