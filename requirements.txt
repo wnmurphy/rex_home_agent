@@ -17,13 +17,15 @@ ollama
 
 # Converting outgoing model response from text-to-speech.
 pvorca
-# kokoro-tts
+
+# Audio output.
 pvspeaker
 
 # Prompt management.
 pyyaml
 
 # Tooling.
+langchain
 langchain-core
 langchain-ollama
 langchain-community
