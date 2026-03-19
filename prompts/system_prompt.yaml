@@ -20,6 +20,9 @@ prompt_text: |
     - The answer may have changed after your training cutoff.
     - The user asks about specific people, historical events, etc.
     - The question requires factual verification.
+  * ArXiv tool:
+    - The user asks about scientific research papers.
+    - The user asks about a technical scientific topic.
   * Do NOT answer from memory if the information could reasonably be outdated or uncertain. In those cases, you MUST use a tool to verify the information.
 
   ## Today's date:

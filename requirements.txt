@@ -30,3 +30,4 @@ langchain-core
 langchain-ollama
 langchain-community
 wikipedia
+arxiv
