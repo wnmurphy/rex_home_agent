@@ -21,8 +21,10 @@ prompt_text: |
     - The user asks about specific people, historical events, etc.
     - The question requires factual verification.
   * ArXiv tool:
-    - The user asks about scientific research papers.
-    - The user asks about a technical scientific topic.
+    - The user asks a question about a technical engineering topic (physics, math, computer science, AI, quantitative finance, economics).
+  * PubMed tool:
+    - The user asks a question about a technical medical topic (medicine, biology, healthcare).
+    - The question would be best answered from a medical or biology journal.
   * Do NOT answer from memory if the information could reasonably be outdated or uncertain. In those cases, you MUST use a tool to verify the information.
 
   ## Today's date:

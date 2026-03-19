@@ -3,7 +3,7 @@ import time
 import uuid
 
 from langchain.agents import create_agent
-from langchain_community.tools import BraveSearch, WikipediaQueryRun, ArxivQueryRun
+from langchain_community.tools import BraveSearch, WikipediaQueryRun, ArxivQueryRun, PubmedQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper, ArxivAPIWrapper
 from langchain_core.messages import AIMessageChunk
 from langchain_core.prompts import PromptTemplate
@@ -25,10 +25,13 @@ wikipedia_search_tool = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
 
 arxiv_search_tool = ArxivQueryRun(api_wrapper=ArxivAPIWrapper())
 
+pub_med_search_tool = PubmedQueryRun()
+
 agent_tools = [
     brave_search_tool,
     wikipedia_search_tool,
     arxiv_search_tool,
+    pub_med_search_tool,
 ]
 
 system_prompt_template_text = load_prompt("system_prompt").get("prompt_text", {})

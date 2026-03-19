@@ -31,3 +31,4 @@ langchain-ollama
 langchain-community
 wikipedia
 arxiv
+xmltodict
