@@ -1,3 +1,4 @@
+import queue
 import threading
 import time
 import wave
@@ -18,23 +19,11 @@ def load_wav_pcm(wav_path):
 
 
 def thinking_sound_loop(stop_event, audio_playback_queue, wav_pcm):
-    i = 0
-    frame_length = Config.AUDIO_FRAME_LENGTH_IN_SAMPLES
-    frame_duration = frame_length / Config.SAMPLE_RATE_OUTPUT_AUDIO
-
     while not stop_event.is_set():
-        if audio_playback_queue.qsize() < 2:
-
-            # Play in frame-sized chunks to enable thinking sound to be interrupted.
-            frame = wav_pcm[i:i+frame_length]
-            if not frame:
-                i = 0
-                continue
-
-            audio_playback_queue.put(("thinking", frame))
-            i += frame_length
-
-        time.sleep(frame_duration)
+        try:
+            audio_playback_queue.put(("thinking_in_progress", wav_pcm), timeout=0.05)
+        except queue.Full:
+            pass
 
 
 # Loads a YAML file into a dictionary.

@@ -96,7 +96,6 @@ def main():
         LLMWorker(
             in_q=stt_text_queue,
             out_q=llm_response_text_queue,
-            speaker=speaker,
             audio_playback_queue=audio_playback_queue,
         ),
 

@@ -50,9 +50,8 @@ class LLMWorker(WorkerThread):
     Submits them to ollama model,
     Writes chunks of streaming response from ollama model to the llm response queue.
     """
-    def __init__(self, in_q, out_q, speaker, audio_playback_queue, **kwargs):
-        super().__init__(in_q, out_q, speaker=speaker, audio_playback_queue=audio_playback_queue, **kwargs)
-        self.thinking_sound_pcm = load_wav_pcm(Config.PATH_TO_THINKING_SOUND)
+    def __init__(self, in_q, out_q, audio_playback_queue, **kwargs):
+        super().__init__(in_q, out_q, audio_playback_queue=audio_playback_queue, **kwargs)
         self.model = ChatOllama(
                 model=Config.OLLAMA_MODEL,
                 validate_model_on_init=True,
@@ -71,14 +70,7 @@ class LLMWorker(WorkerThread):
 
     def process(self, user_input):
 
-        # Start a thread to continually play the thinking sound...
-        thinking_sound_loop_stop_event = threading.Event()
-        t = threading.Thread(
-            target=thinking_sound_loop,
-            args=(thinking_sound_loop_stop_event, self.audio_playback_queue, self.thinking_sound_pcm),
-            daemon=True
-        )
-        t.start()
+        self.audio_playback_queue.put(("start_thinking", None))
 
         response_stream = self.agent.stream(
             input={
@@ -98,13 +90,12 @@ class LLMWorker(WorkerThread):
             is_user_facing_response = bool(message.content) and isinstance(message, AIMessageChunk)
 
             if is_user_facing_response and is_first_token_of_response:
-                thinking_sound_loop_stop_event.set()
-                self.audio_playback_queue.put(("clear_thinking", None))
+                self.audio_playback_queue.put(("done_thinking", None))
                 is_first_token_of_response = False
 
             # Printing activity for debugging visibility
             if is_user_facing_response:
-                    print(f"Agent: {message.content}")
+                print(f"Agent: {message.content}")
             elif hasattr(message, "tool_calls"):
                 print(f"Calling tools: {[tc['name'] for tc in message.tool_calls]}")
 
