@@ -1,3 +1,4 @@
+import queue
 from array import array
 from queue import Empty
 
@@ -7,12 +8,9 @@ from .worker_thread import WorkerThread
 class SpeakerWorker(WorkerThread):
     """
     Write PCMs from the audio_playback_queue to the speaker to play audio output.
-
-    Buffers because Orca produces variable-rate
     """
     def __init__(self, in_q, out_q, speaker, **kwargs):
         super().__init__(in_q, out_q, speaker=speaker, **kwargs)
-        self.buffer = array("h")
         self.is_tts_playing = False
         self.is_sound_effect_playing = False
 
@@ -27,10 +25,17 @@ class SpeakerWorker(WorkerThread):
         # print(f"Speaker worker got: {tag}")
 
         if tag == "clear_thinking":
-            self.buffer.clear()
+            # TODO: we need to remove thinking sounds from the queue here.
             return
 
-        if tag in ["wake", "thinking"]:
+
+        if tag == "thinking":
+            if self.is_tts_playing:
+                return
+            self.speaker.write(pcm)
+            return
+
+        if tag == "wake":
             if not self.is_sound_effect_playing:
                 self.is_sound_effect_playing = True
                 self.speaker.write(pcm)

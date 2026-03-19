@@ -1,4 +1,5 @@
 import threading
+import time
 import wave
 import yaml
 
@@ -15,25 +16,32 @@ def load_wav_pcm(wav_path):
         frames = wf.readframes(wf.getnframes())
         return array("h", frames)
 
+
 def thinking_sound_loop(stop_event, audio_playback_queue, wav_pcm):
     i = 0
-    while True:
-        if stop_event.is_set():
-            return
+    frame_length = Config.AUDIO_FRAME_LENGTH_IN_SAMPLES
+    frame_duration = frame_length / Config.SAMPLE_RATE_OUTPUT_AUDIO
 
-        # Play in frame-sized chunks to enable thinking sound to be interrupted.
-        frame = wav_pcm[i:i+Config.AUDIO_FRAME_LENGTH_IN_SAMPLES]
-        if not frame:
-            i = 0
-            continue
-        audio_playback_queue.put(("thinking", frame))
-        i += Config.AUDIO_FRAME_LENGTH_IN_SAMPLES
-        threading.Event().wait(0.01)
+    while not stop_event.is_set():
+        if audio_playback_queue.qsize() < 2:
+
+            # Play in frame-sized chunks to enable thinking sound to be interrupted.
+            frame = wav_pcm[i:i+frame_length]
+            if not frame:
+                i = 0
+                continue
+
+            audio_playback_queue.put(("thinking", frame))
+            i += frame_length
+
+        time.sleep(frame_duration)
+
 
 # Loads a YAML file into a dictionary.
 def load_prompt(prompt_key):
     with open(f"./prompts/{prompt_key}.yaml", "r") as f:
         return yaml.safe_load(f)
+
 
 def convert_message_list_to_string(message_list):
     type_to_string_map = {

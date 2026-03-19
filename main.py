@@ -1,6 +1,7 @@
 import threading
 import time
 from queue import Queue
+from random import sample
 
 import pvcheetah
 import pvcobra
@@ -58,10 +59,10 @@ def main():
     )
     orca = pvorca.create(
         access_key=Config.PICOVOICE_LICENSE_KEY,
-        model_path=Config.TTS_MODEL_PATH
+        model_path=Config.TTS_MODEL_PATH,
     )
     speaker = PvSpeaker(
-        sample_rate=orca.sample_rate,
+        sample_rate=Config.SAMPLE_RATE_OUTPUT_AUDIO,
         bits_per_sample=16,
         buffer_size_secs=Config.SPEAKER_BUFFER_SIZE_IN_SECONDS,
     )
