@@ -29,3 +29,4 @@ langchain
 langchain-core
 langchain-ollama
 langchain-community
+wikipedia

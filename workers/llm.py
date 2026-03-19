@@ -3,7 +3,8 @@ import time
 import uuid
 
 from langchain.agents import create_agent, AgentState
-from langchain_community.tools import BraveSearch
+from langchain_community.tools import BraveSearch, DuckDuckGoSearchResults, WikipediaQueryRun
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper, WikipediaAPIWrapper
 from langchain_core.messages import AIMessageChunk, ToolMessage, AIMessage
 from langchain_core.prompts import PromptTemplate
 from langchain_ollama import ChatOllama
@@ -20,14 +21,21 @@ brave_search_tool = BraveSearch.from_search_kwargs(search_kwargs={
     "country": "us",
 })
 
+wikipedia_search_tool = WikipediaQueryRun(api_wrapper=WikipediaAPIWrapper())
+
 agent_tools = [
     brave_search_tool,
+    wikipedia_search_tool,
 ]
 
-
-# Define a schema for the agent; what additional params to expect.
-class AgentStateSchema(AgentState):
-    user_intent: str
+system_prompt_template_text = load_prompt("system_prompt").get("prompt_text", {})
+system_prompt_string = PromptTemplate(
+    template=system_prompt_template_text,
+    input_variables=["current_date", "current_location"],
+).partial(
+    current_date=time.strftime("%B %d, %Y"),
+    current_location=Config.CURRENT_LOCATION,
+).format()
 
 
 class LLMWorker(WorkerThread):
@@ -46,9 +54,8 @@ class LLMWorker(WorkerThread):
         self.agent = create_agent(
             model=self.model,
             tools=agent_tools,
-            system_prompt=load_prompt("system_prompt").get("prompt_text", {}),
+            system_prompt=system_prompt_string,
             checkpointer=InMemorySaver(),
-            state_schema=AgentStateSchema,
         )
         self.current_session_id = str(uuid.uuid4())
 
@@ -113,11 +120,11 @@ class LLMWorker(WorkerThread):
                 self.audio_playback_queue.put(("clear_thinking", None))
                 is_first_token_of_response = False
 
-            # # Printing activity for debugging visibility
-            # if is_user_facing_response:
-            #         print(f"Agent: {message.content}")
-            # elif hasattr(message, "tool_calls"):
-            #     print(f"Calling tools: {[tc['name'] for tc in message.tool_calls]}")
+            # Printing activity for debugging visibility
+            if is_user_facing_response:
+                    print(f"Agent: {message.content}")
+            elif hasattr(message, "tool_calls"):
+                print(f"Calling tools: {[tc['name'] for tc in message.tool_calls]}")
 
             # Add model response to the outbound queue.
             if message and message.content and isinstance(message, AIMessageChunk):

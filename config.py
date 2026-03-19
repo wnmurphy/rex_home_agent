@@ -38,3 +38,6 @@ class Config:
 
     # Prompts
     SYSTEM_PROMPT_PATH = "./prompts/system_prompt.yaml"
+
+    # Miscellaneous
+    CURRENT_LOCATION = "Bay Area, California"
